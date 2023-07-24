@@ -82,6 +82,7 @@ class PIECE:
     def __init__(self, piece_to_move, move) -> None:
         self.piece_to_move = piece_to_move
         self.move = move
+        self.square = None
 
     def move_piece(self):
         for position, piece in enumerate(chess_pieces):
@@ -90,47 +91,86 @@ class PIECE:
                 self.position = squares[position]
 
                 for square, move in enumerate(squares):
+                    self.square = square
                     if self.move == move:
                         chess_pieces.pop(position)
                         piece_moved = chess_pieces.pop(square)
-                        chess_pieces.insert(square, self.piece_to_move)
+                        chess_pieces.insert(self.square, self.piece_to_move)
                         chess_pieces.insert(position, piece_moved)
 
         return chess_pieces
 
+    def pass_to_validate_move(self):
+        match self.piece_to_move:
+
+            case "bK" | "wK":
+                KING(self.move).validate_move()
+
+            case "bQ" | "wQ":
+                QUEEN(self.move).validate_move()
+
+            case "bR1" | "bR2" | "wR1" | "wR2":
+                ROOK(self.move).validate_move()
+
+            case "bB1" | "bB2" | "wB1" | "wB2":
+                BISHOP(self.move).validate_move()
+
+            case "bN1" | "bN2" | "wN1" | "wN2":
+                KNIGHT(self.move).validate_move()
+
+            case "bP1" | "bP2" | "bP3" | "bP4" | "bP5" | "bP6" | "bP7" | "bP8" | "wP1" | "wP2" | "wP3" | "wP4" | "wP5" | "wP6" | "wP7" | "wP8":
+                PAWN(self.move).validate_move()
+
     def validate_move(self):
+
         pass
 
 
 class KING(PIECE):
-    def __init__(self) -> None:
-        self.king = "K"
+    def __init__(self, move) -> None:
+        super().__init__(move)
+
+    def validate_move(self):
+        ...
 
 
 class QUEEN(PIECE):
-    def __init__(self, piece_to_move, move) -> None:
-        self.queen = "Q"
+    def __init__(self, move) -> None:
+        super().__init__(move)
+
+    def validate_move(self):
+        ...
 
 
 class ROOK(PIECE):
-    def __init__(self, piece_to_move, move) -> None:
-        self.rook = "R"
+    def __init__(self, move) -> None:
+        super().__init__(move)
+
+    def validate_move(self):
+        ...
 
 
 class BISHOP(PIECE):
-    def __init__(self, piece_to_move, move) -> None:
-        self.bishop = "B"
+    def __init__(self, move) -> None:
+        super().__init__(move)
 
+    def validate_move(self):
+        ...
 
 class KNIGHT(PIECE):
-    def __init__(self, piece_to_move, move) -> None:
-        self.knight = "N"
+    def __init__(self, move) -> None:
+        super().__init__(move)
+
+    def validate_move(self):
+        ...
 
 
 class PAWN(PIECE):
-    def __init__(self, piece_to_move, move) -> None:
-        self.pawn = "P"
+    def __init__(self, move) -> None:
+        super().__init__(move)
 
+    def validate_move(self):
+        ...
 
 def main():
     panel = Panel(Text("CHESS", style="#EEEDED on #557A46"), padding=1)
