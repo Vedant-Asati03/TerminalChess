@@ -1,5 +1,7 @@
 """ TerminalChess game """
 
+# from enum import Enum
+import itertools
 from itertools import cycle
 
 from rich import print
@@ -10,6 +12,11 @@ from rich.table import Table
 from rich.style import Style
 from rich.prompt import Prompt
 from rich.console import Console
+
+
+# class color(Enum):
+
+#     pass
 
 
 class Game:
@@ -24,6 +31,12 @@ class Game:
         square_name (list): The list of square names on the board.
         square_color (Style): The style for square color in the console.
         console (Console): The rich.Console object for printing the board.
+
+    Methods:
+        set_piece_color: Sets the color of a chess piece.
+        highlight_move: Highlights the move on the chessboard.
+        set_board_color: Sets the board color and prints the chessboard.
+        create_board: Creates the Chessboard.
     """
 
     def __init__(self, updated_chess_pieces, move, previous_square) -> None:
@@ -177,7 +190,7 @@ class Game:
 
         if piece.startswith("W"):
             piece = piece.removeprefix("W")
-            piece_color = f"[#B0B0B0]{piece.center(2)}"
+            piece_color = f"[#BBB3A2]{piece.center(2)}"
         elif piece.startswith("B"):
             piece = piece.removeprefix("B")
             piece_color = f"[#000000]{piece.center(2)}"
@@ -200,15 +213,16 @@ class Game:
             self.square_name[i * 8 + j] == self.move
             and self.updated_chess_pieces is not None
         ):
-            return "#C4FB6D"
+            return "#BBCB44"
         if self.square_name[i * 8 + j] == self.previous_square:
-            return "#FBF46D"
+            return "#F5F67F"
+        return None
 
     def set_board_color(self):
         """Sets the board color and prints the chessboard."""
 
-        light_color_square = "#FBFFB1"
-        dark_color_square = "#557A46"
+        light_color_square = "#EEEED2"
+        dark_color_square = "#779756"
 
         column_tag = list("87654321")
 
@@ -217,7 +231,7 @@ class Game:
                 self.chess_pieces = self.updated_chess_pieces
 
         for i in range(8):
-            print(f"[#F6F4EB on #2C3333]{column_tag[i]} ", end="")
+            print(f"[#F6F4EB on #302E2A]{column_tag[i]} ", end="")
             for j in range(8):
                 piece = self.chess_pieces[i * 8 + j].upper()
 
@@ -240,7 +254,7 @@ class Game:
         chess_board = Table(show_header=False, show_lines=True, show_edge=True)
 
         for tag, _ in enumerate(row_tag):
-            self.console.print(f"[#F6F4EB on #2C3333] {row_tag[tag]}", end="")
+            self.console.print(f"[#F6F4EB on #302E2A] {row_tag[tag]}", end="")
         print()
 
         self.set_board_color()
@@ -277,6 +291,38 @@ class Move:
         self.move = move
 
 
+class Parameters:
+    """
+    Takes parameters for Move validation.
+
+    ... Existing docstring ...
+
+    Attributes:
+        move (str): The move.
+        position (str): The position of the piece.
+        replaced_piece (str): The piece that will be replaced.
+        players_piece (str): The current player's piece.
+        temp_chess_pieces (list): A temporary copy of chess pieces.
+        square_name (list): The list of square names on the board.
+    """
+
+    def __init__(
+        self,
+        move,
+        position,
+        replaced_piece,
+        players_piece,
+        temp_chess_pieces,
+        square_name,
+    ) -> None:
+        self.move = move
+        self.position = position
+        self.replaced_piece = replaced_piece
+        self.players_piece = players_piece
+        self.temp_chess_pieces = temp_chess_pieces
+        self.square_name = square_name
+
+
 class ValidationForAllPieces:
     """
     Validates moves for all pieces.
@@ -288,24 +334,38 @@ class ValidationForAllPieces:
         players_piece (str): The current player's piece.
     """
 
-    def __init__(self, move, position, replaced_piece, players_piece) -> None:
-        self.move = move
-        self.position = position
-        self.replaced_piece = replaced_piece
-        self.players_piece = players_piece
+    def __init__(self, parameters) -> None:
+        self.parameters = parameters
 
     def check_for_same_color_piece(self):
-        """Checks if the move involves replacing a piece of the same color.
+        """Checks if the move involves replacing a piece of the same color
+        (for every move).
 
         Returns:
             bool: True if the move is valid, False otherwise.
         """
 
-        piece_color = "w" if self.players_piece.startswith("w") else "b"
+        piece_color = "w" if self.parameters.players_piece.startswith("w") else "b"
 
-        if self.replaced_piece[0] != piece_color and self.move == self.position:
-            pass
-        else:
+        if (
+            self.parameters.replaced_piece[0] == piece_color
+            and self.parameters.move == self.parameters.position
+        ):
+            return False
+
+    def check_for_occupied_squares(self, index: int):
+        """Checks if the square is occupied or not
+        (for each piece possible moves).
+
+        Returns:
+            bool: True if the move is valid, False otherwise.
+        """
+
+        square = self.parameters.square_name.index(index)
+        check_piece_color = self.parameters.temp_chess_pieces[square][0]
+        piece_color = "w" if self.parameters.players_piece.startswith("w") else "b"
+
+        if piece_color == check_piece_color:
             return False
 
 
@@ -319,7 +379,6 @@ class Piece:
         chess_pieces (list): The list of chess pieces on the board.
         cell_name (list): The list of square names on the board.
         position (str): The current position of the piece.
-        is_valid_move (bool): Whether the move is valid or not.
     """
 
     def __init__(self, player, move, chess_pieces, cell_name) -> None:
@@ -356,9 +415,7 @@ class Piece:
             str: The current position of the piece.
         """
 
-        for i, piece in enumerate(temp_chess_pieces):
-            if players_piece == piece:
-                position = self.cell_name[i]
+        position = self.cell_name[temp_chess_pieces.index(players_piece)]
 
         return position
 
@@ -377,67 +434,64 @@ class Piece:
         Returns:
             list: Updated chess pieces and the position of the piece.
         """
-
-        validation_for_all_pieces = ValidationForAllPieces(
+        parameters = Parameters(
             move=self.move.move,
             position=self.cell_name[square],
             replaced_piece=piece_moved,
             players_piece=players_piece,
-        ).check_for_same_color_piece()
+            temp_chess_pieces=self.chess_pieces,
+            square_name=self.cell_name,
+        )
 
-        # validation = {
-        #     "k": King(
-        #         self.player,
-        #         players_piece,
-        #         self.move.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ).validate_move(),
-        #     "q": Queen(
-        #         self.player,
-        #         players_piece,
-        #         self.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ),
-        #     "r": Rook(
-        #         self.player,
-        #         players_piece,
-        #         self.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ),
-        #     "b": Bishop(
-        #         self.player,
-        #         players_piece,
-        #         self.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ),
-        #     "n": Knight(
-        #         self.player,
-        #         players_piece,
-        #         self.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ),
-        #     "p": Pawn(
-        #         self.player,
-        #         players_piece,
-        #         self.move,
-        #         self.cell_name[square],
-        #         temp_chess_pieces,
-        #         self.cell_name,
-        #     ),
-        # }
-        # self.is_valid_move = validation.get(self.move.piece_moved)
+        validation_for_all_pieces = ValidationForAllPieces(parameters)
 
-        if validation_for_all_pieces is False:
+        validation_check_for_same_color_piece = (
+            validation_for_all_pieces.check_for_same_color_piece()
+        )
+
+        if validation_check_for_same_color_piece is False:
+            console.print(
+                f"[#C51605]{self.move.piece_moved} can't move to {self.move.move}"
+            )
+            return [None, position_of_piece]
+
+        piece_to_check = self.move.piece_moved[0]
+
+        if piece_to_check == "k":
+            valid_moves = King(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+            ).get_valid_move()
+        elif piece_to_check == "q":
+            valid_moves = Queen(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+            ).get_valid_move()
+        elif piece_to_check == "r":
+            valid_moves = Rook(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+            ).get_valid_move()
+        elif piece_to_check == "b":
+            valid_moves = Bishop(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+            ).get_valid_move()
+        elif piece_to_check == "n":
+            valid_moves = Knight(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+            ).get_valid_move()
+        elif piece_to_check == "p":
+            valid_moves = Pawn(
+                validating_for_all_parameters=parameters,
+                current_square=position_of_piece,
+                players_piece=players_piece,
+            ).get_valid_move()
+        else:
+            valid_moves = []
+
+        if self.move.move not in valid_moves:
             console.print(
                 f"[#C51605]{self.move.piece_moved} can't move to {self.move.move}"
             )
@@ -477,27 +531,271 @@ class Piece:
         """Checks if the move made is valid"""
 
 
-class King(Piece):
+#!
+class King:
     """
     Represents a Chess King.
 
     Attributes:
-        player (Player): The player owning the King.
-        move (Move): The move to be made.
-        chess_pieces (list): The list of chess pieces on the board.
-        cell_name (list): The list of square names on the board.
-        position (str): The current position of the King.
-        is_valid_move (bool): Whether the move is valid or not.
         current_square (str): The current square of the King.
     """
 
-
-    def __init__(self, player, move, chess_pieces, cell_name, current_square) -> None:
-        super().__init__(player, move, chess_pieces, cell_name)
+    def __init__(self, validating_for_all_parameters, current_square) -> None:
+        self.parameter = validating_for_all_parameters
         self.current_square = current_square
 
-    def check_valid_move(self):
+    def get_valid_move(self):
         """Checks if the move made by the player is valid for the King."""
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        row_offsets = [-1, 0, 1]
+        column_offsets = [-1, 0, 1]
+
+        # Generate all possible combinations of row and column offsets
+        possible_moves = [
+            rows[row_index + row_offset] + columns[column_index + column_offset]
+            for row_offset, column_offset in itertools.product(
+                row_offsets, column_offsets
+            )
+            if 0 <= row_index + row_offset < len(rows)
+            and 0 <= column_index + column_offset < len(columns)
+            and (row_offset, column_offset) != (0, 0)
+        ]
+
+        return possible_moves
+
+
+class Queen:
+    """
+    Represents a Chess Queen.
+
+    Attributes:
+        current_square (str): The current square of the Queen.
+    """
+
+    def __init__(self, validating_for_all_parameters, current_square) -> None:
+        self.parameter = validating_for_all_parameters
+        self.current_square = current_square
+
+    def get_valid_move(self):
+        """Checks if the move made by the player is valid for the Queen."""
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        queen_moves = [
+            (0, 1),
+            (0, -1),
+            (1, 0),
+            (-1, 0),  # Horizontal and Vertical moves
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1),  # Diagonal moves
+        ]
+
+        possible_moves = []
+        for row_offset, column_offset in queen_moves:
+            row, col = row_index, column_index
+            while True:
+                row += row_offset
+                col += column_offset
+                if 0 <= row < len(rows) and 0 <= col < len(columns):
+
+                    if (
+                        ValidationForAllPieces(
+                            parameters=self.parameter
+                        ).check_for_occupied_squares(rows[row] + columns[col])
+                        is not False
+                    ):
+                        possible_moves.append(rows[row] + columns[col])
+                else:
+                    break
+
+        return possible_moves
+
+
+class Rook:
+    """
+    Represents a Chess Rook.
+
+    Attributes:
+        current_square (str): The current square of the Rook.
+    """
+
+    def __init__(self, validating_for_all_parameters, current_square) -> None:
+        self.parameter = validating_for_all_parameters
+        self.current_square = current_square
+
+    def get_valid_move(self):
+        """Checks if the move made by the player is valid for the Rook."""
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        rook_moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # Horizontal and Vertical moves
+
+        possible_moves = []
+        for row_offset, column_offset in rook_moves:
+            row, col = row_index, column_index
+            while True:
+                row += row_offset
+                col += column_offset
+                if 0 <= row < len(rows) and 0 <= col < len(columns):
+                    if (
+                        ValidationForAllPieces(
+                            parameters=self.parameter
+                        ).check_for_occupied_squares(rows[row] + columns[col])
+                        is not False
+                    ):
+                        possible_moves.append(rows[row] + columns[col])
+                else:
+                    break
+
+        return possible_moves
+
+
+class Bishop:
+    """
+    Represents a Chess Bishop.
+
+    Attributes:
+        current_square (str): The current square of the Bishop.
+    """
+
+    def __init__(self, validating_for_all_parameters, current_square) -> None:
+        self.parameter = validating_for_all_parameters
+        self.current_square = current_square
+
+    def get_valid_move(self):
+        """Checks if the move made by the player is valid for the Bishop."""
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        bishop_moves = [(1, 1), (1, -1), (-1, 1), (-1, -1)]  # Diagonal moves
+
+        possible_moves = []
+        for row_offset, column_offset in bishop_moves:
+            row, col = row_index, column_index
+            while True:
+                row += row_offset
+                col += column_offset
+                if 0 <= row < len(rows) and 0 <= col < len(columns):
+                    if (
+                        ValidationForAllPieces(
+                            parameters=self.parameter
+                        ).check_for_occupied_squares(rows[row] + columns[col])
+                        is not False
+                    ):
+                        possible_moves.append(rows[row] + columns[col])
+                else:
+                    break
+
+        return possible_moves
+
+
+#!
+class Knight:
+    """
+    Represents a Chess Knight.
+
+    Attributes:
+        current_square (str): The current square of the Knight.
+    """
+
+    def __init__(self, validating_for_all_parameters, current_square) -> None:
+        self.parameter = validating_for_all_parameters
+        self.current_square = current_square
+
+    def get_valid_move(self):
+        """Checks if the move made by the player is valid for the Knight."""
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        knight_moves = [
+            (-2, -1),
+            (-2, 1),
+            (-1, -2),
+            (-1, 2),
+            (1, -2),
+            (1, 2),
+            (2, -1),
+            (2, 1),
+        ]
+
+        possible_moves = [
+            rows[row_index + row_offset] + columns[column_index + column_offset]
+            for row_offset, column_offset in knight_moves
+            if 0 <= row_index + row_offset < len(rows)
+            and 0 <= column_index + column_offset < len(columns)
+        ]
+
+        return possible_moves
+
+
+class Pawn:
+    """
+    Represents a Chess Pawn.
+
+    Attributes:
+        current_square (str): The current square of the Pawn.
+    """
+
+    def __init__(
+        self, validating_for_all_parameters, current_square, players_piece
+    ) -> None:
+        self.parameter = validating_for_all_parameters
+        self.current_square = current_square
+        self.piece_color = players_piece[0]
+
+    def get_valid_move(self):
+        """Checks if the move made by the player is valid for the Pawn."""
+        pawn_offsets = {"w": -1, "b": 1}
+        opt = pawn_offsets.get(self.piece_color)
+
+        columns = list("87654321")
+        rows = list("abcdefgh")
+
+        row_index = rows.index(self.current_square[0])
+        column_index = columns.index(self.current_square[1])
+
+        possible_moves = []
+
+        if (
+            ValidationForAllPieces(
+                parameters=self.parameter
+            ).check_for_occupied_squares(rows[row_index] + columns[column_index + opt])
+            is not False
+        ):
+            if column_index in (1, 6):
+                moves = [
+                    rows[row_index] + columns[column_index + opt],
+                    rows[row_index] + columns[column_index + 2 * opt],
+                ]
+                possible_moves.extend(moves)
+            else:
+                possible_moves.append(rows[row_index] + columns[column_index + opt])
+
+        return possible_moves
 
 
 def main():
@@ -505,10 +803,10 @@ def main():
     panel = Panel(Text("CHESS", style="#EEEDED on #557A46"), padding=1)
     print(Align(panel, "center"))
 
-    white = Prompt.ask("Enter name [#EEEDED on #557A46]Player01", default="white")
-    black = Prompt.ask("Enter name [#000000 on #557A46]Player02", default="black")
+    white = Prompt.ask("[#F6F4EB on #302E2A]Enter name", default="white")
+    black = Prompt.ask("[#F6F4EB on #302E2A]Enter name", default="black")
 
-    input("Press any key to Start...\n\n")
+    input("Press enter to Start...\n\n")
 
     game = Game(None, None, None)
     game.create_board()
@@ -517,21 +815,24 @@ def main():
 
     for player in player_cycle:
         color = "[#EEEDED on #557A46]" if player == white else "[#000000 on #FFFFE8]"
-        piece, move = (
-            console.input(f"\n{color}Make a move: ").strip().casefold().split(" ")
-        )
+        while True:
+            piece, move = (
+                console.input(f"\n{color}Make a move: ").strip().casefold().split(" ")
+            )
 
-        updated_piece = Piece(
-            Player(white, black, player),
-            Move(piece, move),
-            chess_pieces=game.chess_pieces,
-            cell_name=game.square_name,
-        ).move_piece()
+            updated_piece = Piece(
+                Player(white, black, player),
+                Move(piece, move),
+                chess_pieces=game.chess_pieces,
+                cell_name=game.square_name,
+            ).move_piece()
 
-        game.updated_chess_pieces = updated_piece[0]
-        game.previous_square = updated_piece[1]
-        game.move = move
-        game.create_board()
+            if updated_piece[0] is not None:
+                game.updated_chess_pieces = updated_piece[0]
+                game.previous_square = updated_piece[1]
+                game.move = move
+                game.create_board()
+                break
 
 
 if __name__ == "__main__":
