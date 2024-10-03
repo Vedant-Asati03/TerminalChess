@@ -1,9 +1,1 @@
-PRE GYM -
 
-1. bread(morning)
-
-POST GYM -
-
-1. supper(morning)
-2. banana shake(evening)
-3. supper(evening)
