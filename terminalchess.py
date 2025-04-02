@@ -1,6 +1,7 @@
-""" TerminalChess game """
+"""TerminalChess game"""
 
 from itertools import cycle
+import os
 
 from rich import print
 from rich.text import Text
@@ -48,6 +49,11 @@ class Move:
         self.move = move
 
 
+def clear_terminal():
+    """Clear the terminal screen"""
+    os.system("cls" if os.name == "nt" else "clear")
+
+
 def main():
     console = Console()
     panel = Panel(Text("CHESS", style="#EEEDED on #557A46"), padding=1)
@@ -61,32 +67,20 @@ def main():
     player_cycle = cycle([white, black])
 
     game = CreateBoard(None, None, None, Player(white, black, None))
-    game.create_board()
+
+    # Initial board display
+    clear_terminal()
+    game.create_board()  # Let it print directly
 
     for player in player_cycle:
         color = "[#EEEDED on #557A46]" if player == white else "[#000000 on #FFFFE8]"
         while True:
-            piece, move = (
-                console.input(f"\n{color}Make a move: ").strip().casefold().split(" ")
-            )
-
-            # validator = Validator.from_callable(
-            #     DisplayValidMoves(
-            #         Params(
-            #             Player(white, black, player),
-            #             Move(None, None),
-            #             saved_game=game.piece.game,
-            #             cell_name=GenerateAlgebraicNotation().square_algebraic_notation,
-            #         )
-            #     )._check_if_piece()
-            # )
-
-            # piece, move = (
-            #     prompt(console.print(f"\n{color}Make a move: "), validator=validator)
-            #     .strip()
-            #     .casefold()
-            #     .split(" ")
-            # )
+            try:
+                move_input = console.input(f"\n{color}Make a move: ").strip().casefold()
+                piece, move = move_input.split(" ")
+            except ValueError:
+                console.print("[red]Invalid input! Format should be 'piece move'[/red]")
+                continue
 
             params = Params(
                 Player(white, black, player),
@@ -102,8 +96,13 @@ def main():
                 game.previous_square = updated_piece[1]
                 game.move = move
                 game.player = Player(white, black, player)
-                game.create_board()
+
+                # Clear the terminal and display the updated board
+                clear_terminal()
+                game.create_board()  # Let it print directly
                 break
+            else:
+                console.print("[red]Invalid move! Try again.[/red]")
 
 
 if __name__ == "__main__":
