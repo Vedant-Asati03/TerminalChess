@@ -15,12 +15,14 @@ Textual framework, allowing for mouse interactions and a visually appealing ches
 To get started with Terminal Chess, follow these steps:
 
 1. **Clone the repository**:
+
     ```sh
     git clone https://github.com/Vedant-Asati03/TerminalChess.git
     cd TerminalChess
     ```
 
 2. **Install the required packages**:
+
     ```sh
     pip install -r requirements.txt
     ```
@@ -37,11 +39,11 @@ python terminalchess.py
 
 Contributions are welcome! Please follow these steps to contribute:
 
-* Fork the repository.
-* Create a new branch (git checkout -b feature-branch).
-* Commit your changes (git commit -m 'Add some feature').
-* Push to the branch (git push origin feature-branch).
-* Open a pull request.
+- Fork the repository.
+- Create a new branch (git checkout -b feature-branch).
+- Commit your changes (git commit -m 'Add some feature').
+- Push to the branch (git push origin feature-branch).
+- Open a pull request.
 
 ## License
 
