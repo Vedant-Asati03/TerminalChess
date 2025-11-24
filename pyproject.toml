@@ -1,0 +1,11 @@
+[project]
+name = "terminalchess"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "prompt-toolkit>=3.0.52",
+    "rich>=14.2.0",
+    "textual>=6.6.0",
+]
