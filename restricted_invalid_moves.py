@@ -93,7 +93,10 @@ class RestrictedInvalidMoves:
         elif abs(current_row - target_row) == abs(current_column - target_column):
             squares_to_check = [
                 row_labels[row] + column_labels[col]
-                for row, col in zip(rows_between, columns_between)
+                for row, col in zip(
+                    rows_between if current_row < target_row else reversed(rows_between),
+                    columns_between if current_column < target_column else reversed(columns_between)
+                )
             ]
         else:
             return True
