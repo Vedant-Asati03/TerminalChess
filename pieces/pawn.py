@@ -7,10 +7,15 @@ class Pawn:
     """
 
     def __init__(
-        self, current_square, players_piece
+        self, current_square, players_piece, saved_game, cell_name
     ) -> None:
         self.current_square = current_square
         self.piece_color = players_piece[0]
+        self.saved_game = saved_game
+        self.cell_name = cell_name
+
+    def _piece_at(self, square):
+        return self.saved_game[self.cell_name.index(square)]
 
     def get_valid_move(self):
         """Checks if the move made by the player is valid for the Pawn."""
@@ -25,13 +30,13 @@ class Pawn:
 
         possible_moves = []
 
-        if column_index in (1, 6):
-            moves = [
-                rows[row_index] + columns[column_index + opt],
-                rows[row_index] + columns[column_index + 2 * opt],
-            ]
-            possible_moves.extend(moves)
-        else:
-            possible_moves.append(rows[row_index] + columns[column_index + opt])
+        forward_one = rows[row_index] + columns[column_index + opt]
+        if self._piece_at(forward_one) == " ":
+            possible_moves.append(forward_one)
+
+            if column_index in (1, 6):
+                forward_two = rows[row_index] + columns[column_index + 2 * opt]
+                if self._piece_at(forward_two) == " ":
+                    possible_moves.append(forward_two)
 
         return possible_moves

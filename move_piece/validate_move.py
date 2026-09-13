@@ -69,7 +69,10 @@ class ValidateMove:
                 valid_moves = Knight(algebraic_position).get_valid_move()
             case Piece.PAWN.value:
                 valid_moves = Pawn(
-                    algebraic_position, self.piece_colored
+                    algebraic_position,
+                    self.piece_colored,
+                    self.params.saved_game,
+                    self.params.cell_name,
                 ).get_valid_move()
             case _:
                 valid_moves = []
