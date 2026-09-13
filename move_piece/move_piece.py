@@ -18,7 +18,7 @@ class MovePiece:
     def _swap_pieces(self, square, position, saved_game):
         piece_to_move = saved_game[square]
         saved_game[square] = self.piece_colored
-        saved_game[position] = piece_to_move
+        saved_game[position] = " "
 
         return piece_to_move
 
