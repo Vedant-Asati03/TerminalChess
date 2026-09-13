@@ -89,7 +89,11 @@ def main():
                 cell_name=GenerateAlgebraicNotation().square_algebraic_notation,
             )
 
-            updated_piece = MovePiece(params).move_piece()
+            try:
+               updated_piece = MovePiece(params).move_piece()
+            except ValueError:
+                console.print("[red]Invalid move! Unknown piece or square.[/red]")
+                continue
 
             if updated_piece[0] is not None:
                 game.updated_game = updated_piece[0]
