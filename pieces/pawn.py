@@ -39,4 +39,12 @@ class Pawn:
                 if self._piece_at(forward_two) == " ":
                     possible_moves.append(forward_two)
 
+        for file_offset in (-1, 1):
+            capture_row = row_index + file_offset
+            if 0 <= capture_row < len(rows):
+                capture_square = rows[capture_row] + columns[column_index + opt]
+                capture_piece = self._piece_at(capture_square)
+                if capture_piece != " " and capture_piece[0] != self.piece_color:
+                    possible_moves.append(capture_square)
+
         return possible_moves
